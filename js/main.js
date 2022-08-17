@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import dat from 'dat.gui';
 
 
@@ -28,19 +27,27 @@ class Domino {
         this.meshName = `${this.index}번째 도미노`;
         this.mesh.castShadow = true;
         this.mesh.position.set(this.x, this.y, this.z);
-        this.mesh.rotation.set(this.rotationX, this.rotationY, this.rotationZ)
+        this.mesh.rotation.set(this.rotationX, this.rotationY, this.rotationZ);
         this.scene.add(this.mesh);
 
-        // info.gltfLoader.load('models/domino.glb', (glb) => {
-        //     this.modelMesh = glb.scene.children[0];
-        //     this.modelMeshName = `${this.index}번째 도미노`;
-        //     this.modelMesh.castShadow = true;
-        //     this.modelMesh.position.set(this.x, this.y, this.z);
-        //     this.modelMesh.rotation.set(this.rotationX, this.rotationY, this.rotationZ)
-        //     this.scene.add(this.modelMesh);
+        this.setCannonBody()
+    }
 
-        //     this.setCannonBody();
-        // })
+    setCannonBody () {
+        const shape = new CANNON.Box(new CANNON.Vec3( this.width / 2, this.height / 2, this.depth / 2 ) );
+
+        this.cannonBody = new CANNON.Body({
+            mass: 1,
+            position: new CANNON.Vec3( this.x, this.y, this.z ),
+            shape,
+        });
+
+        this.cannonBody.quaternion.setFromAxisAngle(
+            new CANNON.Vec3(0, 1, 0),
+            this.rotationY,
+        );
+
+        this.cannonWorld.addBody(this.cannonBody)
     }
 }
 
@@ -119,22 +126,19 @@ floorMesh.castShadow = true;
 floorMesh.position.set(0, -1, 0);
 scene.add(floorMesh);
 
-// gltf
-// const gltfLoader = new GLTFLoader();
-
 const geometry = new THREE.BoxGeometry(1, 1.5, 0.2);
 const material = new THREE.MeshStandardMaterial({
     color: '#aaa',
 });
 
 const tp = [19, 37, 74, 111, 150];
-const tpv = [18, 36];
+// const tpv = [19, 37];
 const dominoPoints = function (i) {
     if ( i < tp[0] ){ return [0, 0, -i]; } 
-    else if ( i >= tp[0] && i < tp[1] ) { return [(i - tp[0]), 0, -tpv[0]] }
-    else if ( i >= tp[1] && i < tp[2] ) { return [(tp[1] - tp[0]), 0, (-tpv[0] - tp[1] + i)] }
-    else if ( i >= tp[2] && i < tp[3] ) { return [(tpv[0] + tp[2] - i ), 0, tpv[0]] }
-    else if ( i >= tp[3] && i < tp[4] ) { return [-tpv[0], 0, tpv[0] + tp[3] - i]}
+    else if ( i >= tp[0] && i < tp[1] ) { return [(i - tp[0] + 0.5), 0, -tp[0]] }
+    else if ( i >= tp[1] && i < tp[2] ) { return [(tp[1] - tp[0]), 0, (-tp[0] - tp[1] + i + 0.5)] }
+    else if ( i >= tp[2] && i < tp[3] ) { return [(tp[0] + tp[2] - i - 1 ), 0, tp[0]] }
+    else if ( i >= tp[3] && i < tp[4] ) { return [-tp[0], 0, tp[0] + tp[3] - i - 0.5]}
     else { return 'else' }
 }
 const dominos = [];
@@ -161,11 +165,18 @@ for (let i = 0; i < tp[tp.length - 1]; i++) {
 
 
 
+
+
 // 그리기
 const draw = function () {
     controls.update();
 
     renderer.render(scene, camera);
+
+    dominos.forEach((item) => {
+        item.mesh.position.copy(item.cannonBody.position);
+        item.mesh.quaternion.copy(item.cannonBody.quaternion);
+    })
 
     window.requestAnimationFrame(draw);
 }
