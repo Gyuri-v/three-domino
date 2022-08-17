@@ -24,17 +24,23 @@ class Domino {
         this.rotationY = info.rotationY || 0;
         this.rotationZ = info.rotationZ || 0;
 
-        info.gltfLoader.load('models/domino.glb', (glb) => {
-            this.modelMesh = glb.scene.children[0];
-            this.modelMeshName = `${this.index}번째 도미노`;
-            this.modelMesh.castShadow = true;
-            this.modelMesh.position.set(this.x, this.y, this.z);
-            this.modelMesh.rotation.set(this.rotationX, this.rotationY, this.rotationZ)
-            this.scene.add(this.modelMesh);
+        this.mesh = new THREE.Mesh(info.geometry, info.material);
+        this.meshName = `${this.index}번째 도미노`;
+        this.mesh.castShadow = true;
+        this.mesh.position.set(this.x, this.y, this.z);
+        this.mesh.rotation.set(this.rotationX, this.rotationY, this.rotationZ)
+        this.scene.add(this.mesh);
 
-            // this.setCannonBody();
-        })
+        // info.gltfLoader.load('models/domino.glb', (glb) => {
+        //     this.modelMesh = glb.scene.children[0];
+        //     this.modelMeshName = `${this.index}번째 도미노`;
+        //     this.modelMesh.castShadow = true;
+        //     this.modelMesh.position.set(this.x, this.y, this.z);
+        //     this.modelMesh.rotation.set(this.rotationX, this.rotationY, this.rotationZ)
+        //     this.scene.add(this.modelMesh);
 
+        //     this.setCannonBody();
+        // })
     }
 }
 
@@ -114,7 +120,12 @@ floorMesh.position.set(0, -1, 0);
 scene.add(floorMesh);
 
 // gltf
-const gltfLoader = new GLTFLoader();
+// const gltfLoader = new GLTFLoader();
+
+const geometry = new THREE.BoxGeometry(1, 1.5, 0.2);
+const material = new THREE.MeshStandardMaterial({
+    color: '#aaa',
+});
 
 const tp = [19, 37, 74, 111, 150];
 const tpv = [18, 36];
@@ -135,9 +146,10 @@ for (let i = 0; i < tp[tp.length - 1]; i++) {
     domino = new Domino({
         scene,
         cannonWorld,
-        gltfLoader,
         x: dominoPoints(i)[0],
         z: dominoPoints(i)[2],
+        geometry: geometry,
+        material: material,
         rotationY: rotation,
         index: i,
     });
