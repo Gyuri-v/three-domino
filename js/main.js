@@ -2,7 +2,12 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import dat from 'dat.gui';
+import gsap from 'gsap';
 
+
+let dominoWidth = 1;
+let dominoHeight = 2;
+let dominoDepth = 0.2;
 
 class Domino {
     constructor(info) {
@@ -11,9 +16,9 @@ class Domino {
 
         this.index = info.index;
         
-        this.width = info.width || 1;
-        this.height = info.height || 2;
-        this.depth = info.depth || 0.2;
+        this.width = info.width || dominoWidth;
+        this.height = info.height || dominoHeight;
+        this.depth = info.depth || dominoDepth;
         
         this.x = info.x || 0;
         this.y = info.y || 1;
@@ -26,6 +31,7 @@ class Domino {
         this.mesh = new THREE.Mesh(info.geometry, info.material);
         this.mesh.name = `${this.index}번째 도미노`;
         this.mesh.castShadow = true;
+        this.mesh.receiveShadow = true;
         this.mesh.position.set(this.x, this.y, this.z);
         this.mesh.rotation.set(this.rotationX, this.rotationY, this.rotationZ);
         this.scene.add(this.mesh);
@@ -48,6 +54,10 @@ class Domino {
             this.rotationY,
         );
 
+        this.cannonBody.allowSleep = true;
+        this.cannonBody.sleepSpeedLimit = 1.0;
+        this.cannonBody.sleepTimeLimit = 1.0;
+
         this.mesh.cannonBody = this.cannonBody;
 
         this.cannonWorld.addBody(this.cannonBody)
@@ -62,7 +72,8 @@ const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
 })
-renderer.setSize(document.body.clientWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.setSize(window.innerWidth, window.innerHeight);
 
 // scene
 const scene = new THREE.Scene;
@@ -71,11 +82,12 @@ scene.background = new THREE.Color('#222');
 // camera
 const camera = new THREE.PerspectiveCamera(
     75,
-    document.body.clientWidth / window.innerHeight,
+    window.innerWidth / window.innerHeight,
     0.1,
     1000
 )
-camera.position.set(0, 40, 50);
+// camera.position.set(0, 40, 50);
+camera.position.set(0, 50, 0);
 camera.lookAt(0, 0, 0);
 scene.add( camera );
 
@@ -89,6 +101,12 @@ const controls = new OrbitControls( camera, renderer.domElement );
 // gird
 const gridHelper = new THREE.GridHelper(60);
 scene.add(gridHelper);
+
+// gui
+// const gui = new dat.GUI();
+// gui.add(camera.position, 'x', -20, 20, 0.01).name('camera x');
+// gui.add(camera.position, 'y', -20, 20, 0.01).name('camera y');
+// gui.add(camera.position, 'z', -20, 20, 0.01).name('camera z');
 
 // light
 const spotLightDistanse = 15;
@@ -106,15 +124,9 @@ spotLight4.position.set( spotLightDistanse, spotLightDistanse, -spotLightDistans
 
 scene.add(spotLight1, spotLight2, spotLight3, spotLight4);
 
-// gui
-const gui = new dat.GUI();
-gui.add(camera.position, 'x', -20, 20, 0.01).name('camera x');
-gui.add(camera.position, 'y', -20, 20, 0.01).name('camera y');
-gui.add(camera.position, 'z', -20, 20, 0.01).name('camera z');
-
 // cannon
 const cannonWorld = new CANNON.World();
-cannonWorld.gravity.set(0, -50, 0);
+cannonWorld.gravity.set(0, -10, 0);
 // 성능
 cannonWorld.broadphase = new CANNON.SAPBroadphase(cannonWorld);
 
@@ -124,8 +136,8 @@ const defaultContactMaterial = new CANNON.ContactMaterial(
     defaultMaterial,
     defaultMaterial,
     {
-        friction: 0.5,
-        restitution: 0.2,
+        friction: 0.5, 
+        restitution: 0.2, 
     }
 )
 cannonWorld.defaultContactMaterial = defaultContactMaterial;
@@ -142,8 +154,8 @@ const dominoDominoContactMaterial = new CANNON.ContactMaterial(
     dominoMaterial,
     dominoMaterial,
     {
-        friction: 0.5, 
-        restitution: 1.5, 
+        friction: 0, 
+        restitution: 0.2, 
     }
 );
 cannonWorld.addContactMaterial(dominoDominoContactMaterial);
@@ -168,12 +180,11 @@ const floorMaterial = new THREE.MeshStandardMaterial({
     color: '#111',
 })
 const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
-floorMesh.position.set(0, -1, 0);
+floorMesh.position.set(0, -0.5, 0);
 floorMesh.receiveShadow = true;
-floorMesh.castShadow = true;
 scene.add(floorMesh);
 
-const geometry = new THREE.BoxGeometry(1, 2, 0.2);
+const geometry = new THREE.BoxGeometry(dominoWidth, dominoHeight, dominoDepth);
 const material = new THREE.MeshStandardMaterial({
     color: '#aaa',
 });
@@ -188,7 +199,7 @@ const dominoPoints = function (i) {
     if ( i < tp[0] ){ return [0, 0, -i]; } 
     else if ( i == tp[0] ) { return [0.5, 0, -18.7] }
     else if ( i == tp[1] ) { return [17.7, 0, -18.5] }
-    else if ( i == tp[2] ) { return [18, 0, 18.5] }
+    else if ( i == tp[2] ) { return [17.7, 0, 18.5] }
     else if ( i == tp[3] ) { return [-18.7, 0, 18.5] }
     else if ( i >= tp[0] && i < tp[1] ) { return [(i - tp[0] + 0.2), 0, -tp[0]] }
     else if ( i >= tp[1] && i < tp[2] ) { return [(tp[1] - tp[0]), 0, (-tp[0] - tp[1] + i + 0.5)] }
@@ -257,9 +268,9 @@ draw();
 
 // setSize
 function setSize() {
-    camera.aspect = document.body.clientWidth / window.innerHeight;
+    camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(document.body.clientWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.render(scene, camera);
 }
 
@@ -267,6 +278,8 @@ function setSize() {
 // raycaster
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+
+let chkDominoOnce = false;
 
 function checkIntersects() {
     raycaster.setFromCamera(mouse, camera);
@@ -283,10 +296,34 @@ function checkIntersects() {
                 new CANNON.Vec3(forceX, 0, forceZ),
                 // new CANNON.Vec3(0, 0, 0),
             );
+
+            if ( !chkDominoOnce ){
+                chkDominoOnce = true;
+
+                gsap.to(camera.position, {
+                    delay: 0.5,
+                    duration: 2.5,
+                    y: 20,
+                    z: 40,
+                });
+            }
+
             break;
         };
     }
 }
+
+// onLoadCamera
+function onLoadCamera() {
+    gsap.to(camera.position, {
+        delay: 0.5,
+        duration: 1.5,
+        y: 6,
+        z: 8,
+    });
+}
+
+// event
 canvas.addEventListener('click', (e) => {
     mouse.x = (e.clientX / canvas.clientWidth) * 2 - 1;
     mouse.y = -((e.clientY / canvas.clientHeight) * 2 - 1);
@@ -294,5 +331,6 @@ canvas.addEventListener('click', (e) => {
     checkIntersects();
 });
 window.addEventListener('resize', setSize);
+window.addEventListener('load', onLoadCamera);
 
 

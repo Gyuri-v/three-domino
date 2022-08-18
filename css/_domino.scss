@@ -1,0 +1,18 @@
+.text-wrap{
+    position: fixed; top: 0; left: 0;
+    padding: 30px;
+
+    .text{
+        font-family: 'NanumSquare';
+        font-size: 15px; font-weight: 600; color: #fff; 
+    }
+
+    .list{
+        margin-top: 20px;
+        li{ 
+            font-family: 'NanumSquare';
+            font-size: 13px; color: #fff; 
+            & + li{ margin-top: 10px; }
+        }
+    }
+}
